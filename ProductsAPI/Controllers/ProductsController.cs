@@ -1,12 +1,73 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using ProductsAPI.Data;
+using ProductsAPI.Models;
 
 namespace ProductsAPI.Controllers
 {
-    public class ProductsController : Controller
+    [Route("api/[controller]")]
+    [ApiController]
+    public class ProductsController : ControllerBase
     {
-        public IActionResult Index()
+        private readonly ProductsContext _context;
+
+       public ProductsController(ProductsContext context)
         {
-            return View();
+            _context = context;
+        }
+
+        [HttpGet]
+        [Route("/products")]
+       public async Task<ActionResult> GetProducts() {
+            return Ok(await _context.Products.ToListAsync());
+        }
+
+        [HttpPost]
+        [Route("/products")]
+        public async Task<ActionResult> CreateProduct(Product product) 
+        {
+            await _context.Products.AddAsync(product);
+
+            await _context.SaveChangesAsync();
+
+            return Ok(product);
+        }
+
+        [HttpPut]
+        [Route("/products")]
+        public async Task<ActionResult> UpdateProduct(Product product)
+        {
+            var dbProduct = await _context.Products.FindAsync(product.Id);
+
+            if(dbProduct == null)
+            {
+                return NotFound();
+            }
+
+            dbProduct.Name = product.Name;
+            dbProduct.Price = product.Price;
+            dbProduct.Category = product.Category;
+
+            await _context.SaveChangesAsync();
+            return Ok(product);
+        }
+
+        [HttpDelete]
+        [Route("/products")]
+        public async Task<ActionResult> UpdateProduct(Guid id)
+        {
+            var dbProduct = await _context.Products.FindAsync(id);
+
+            if(dbProduct == null )
+            {
+                return NotFound();
+            }
+
+            _context.Products.Remove(dbProduct);
+
+            await _context.SaveChangesAsync();
+
+            return NoContent();
         }
     }
 }
